@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+length=$(wc -L < input)
+while IFS= read -r line; do
+    printf '%0*d\n' "$length" "$line"
+done < input > input.padded
+
+sort -df < input.padded > input.sorted
+
+while IFS= read -r num1; do
+    num2=$((2020 - 10#${num1}))
+    if ((num2 >= 0)); then
+        num2Padded=$(printf '%0*d\n' "$length" "$num2")
+        if look -df "$num2Padded" input.sorted; then
+            printf '%s\n\n%d\n' "$num1" "$((10#${num1} * num2))"
+            exit
+        fi
+    fi
+done < input.sorted
+
+printf >&2 '%s: no solution found\n' "$0"
+exit 1

@@ -8,14 +8,16 @@ done < input > input.padded
 sort -df < input.padded > input.sorted
 
 while IFS= read -r num1; do
-    num2=$((2020 - 10#${num1}))
-    if ((num2 >= 0)); then
-        num2Padded=$(printf '%0*d\n' "$length" "$num2")
-        if look -df "$num2Padded" input.sorted; then
-            printf '%s\n\n%d\n' "$num1" "$((10#${num1} * num2))"
-            exit
+    while IFS= read -r num2; do
+        num3=$((2020 - 10#${num1} - 10#${num2}))
+        if ((num3 >= 0)); then
+            num3Padded=$(printf '%0*d\n' "$length" "$num3")
+            if look -df "$num3Padded" input.sorted; then
+                printf '%s\n%s\n\n%d\n' "$num1" "$num2" "$((10#${num1} * 10#${num2} * num3))"
+                exit
+            fi
         fi
-    fi
+    done < input.sorted
 done < input.sorted
 
 printf >&2 '%s: no solution found\n' "$0"

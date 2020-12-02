@@ -6,14 +6,14 @@ BEGIN {
 
 {
     char = $3
-    from = $1
-    to = $2
+    posA = $1
+    posB = $2
     password = $5
 
-    gsub("[^" char "]", "", password)
+    charA = substr(password, posA, 1)
+    charB = substr(password, posB, 1)
 
-    if (from <= length(password) &&
-        length(password) <= to) {
+    if ((charA == char) != (charB == char)) {
         print "matches " $0
     } else {
         print "does not match " $0 > "/dev/stderr"

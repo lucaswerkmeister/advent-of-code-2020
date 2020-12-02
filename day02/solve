@@ -10,7 +10,10 @@ BEGIN {
     to = $2
     password = $5
 
-    if (password ~ (char "{" from "," to "}")) {
+    gsub("[^" char "]", "", password)
+
+    if (from <= length(password) &&
+        length(password) <= to) {
         print "matches " $0
     } else {
         print "does not match " $0 > "/dev/stderr"

@@ -1,0 +1,18 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+    FS = "[- :]";
+}
+
+{
+    char = $3
+    from = $1
+    to = $2
+    password = $5
+
+    if (password ~ (char "{" from "," to "}")) {
+        print "matches " $0
+    } else {
+        print "does not match " $0 > "/dev/stderr"
+    }
+}

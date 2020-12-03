@@ -94,18 +94,31 @@ impl FromStr for Map {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let map = Map::from_str(&fs::read_to_string("input")?)?;
+fn count_slope(map: &Map, right: usize, down: usize) -> usize {
     let mut x = 0;
     let mut trees = 0;
-    for y in 0..map.height {
+    for y in (0..map.height).step_by(down) {
         let square = map.square_at(x, y).unwrap();
         if square == &Square::Tree {
             trees += 1;
         }
-        x += 3;
+        x += right;
     }
-    println!("{}", trees);
+    trees
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let map = Map::from_str(&fs::read_to_string("input")?)?;
+    let trees_r1d1 = count_slope(&map, 1, 1);
+    let trees_r3d1 = count_slope(&map, 3, 1);
+    let trees_r5d1 = count_slope(&map, 5, 1);
+    let trees_r7d1 = count_slope(&map, 7, 1);
+    let trees_r1d2 = count_slope(&map, 1, 2);
+    println!("{}", trees_r3d1); // part 1
+    println!(
+        "{}",
+        trees_r1d1 * trees_r3d1 * trees_r5d1 * trees_r7d1 * trees_r1d2
+    ); // part 2
     Ok(())
 }
 

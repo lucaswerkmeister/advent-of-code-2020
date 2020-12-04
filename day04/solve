@@ -1,4 +1,4 @@
-#!/usr/bin/sed -nf
+#!/usr/bin/sed -nEf
 
 # for any nonempty line
 /./ {
@@ -20,14 +20,14 @@ x
 # normalize it (because hold space begins with a newline, this now includes a leading space)
 s/\n/ /g
 
-# delete it if any required field is missing
-/ byr/ ! d
-/ iyr/ ! d
-/ eyr/ ! d
-/ hgt/ ! d
-/ hcl/ ! d
-/ ecl/ ! d
-/ pid/ ! d
+# delete it if any required field is missing or invalid
+/ byr:19[2-9][0-9]\b/ ! { / byr:200[0-2]\b/ ! d }
+/ iyr:201[0-9]\b/ ! { / iyr:2020\b/ ! d }
+/ eyr:202[0-9]\b/ ! { / eyr:2030\b/ ! d }
+/ hgt:1[5-8][0-9]cm\b/ ! { / hgt:19[0-3]cm\b/ ! { / hgt:59in\b/ ! { / hgt:6[0-9]in\b/ ! { / hgt:7[0-6]in\b/ ! { d } } } } }
+/ hcl:#[0-9a-f]{6}\b/ ! d
+/ ecl:(amb|blu|brn|gry|grn|hzl|oth)\b/ ! d
+/ pid:[0-9]{9}\b/ ! d
 # / cid/ ! d
 
 # finally, print it (without the leading space)

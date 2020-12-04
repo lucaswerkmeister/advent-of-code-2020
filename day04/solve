@@ -1,0 +1,35 @@
+#!/usr/bin/sed -nf
+
+# for any nonempty line
+/./ {
+    # append it to the hold space (after a newline)
+    H
+    # and, if it’s not the last line
+    $ ! {
+        # then delete it from the pattern space and continue with the next line
+        d
+    }
+}
+
+# otherwise (i.e. end of one passport, either by empty line or end-of-file)
+
+# zap pattern space, then exchange hold and pattern space,
+# i.e. get the whole passport from the hold space while clearing the hold space
+z
+x
+# normalize it (because hold space begins with a newline, this now includes a leading space)
+s/\n/ /g
+
+# delete it if any required field is missing
+/ byr/ ! d
+/ iyr/ ! d
+/ eyr/ ! d
+/ hgt/ ! d
+/ hcl/ ! d
+/ ecl/ ! d
+/ pid/ ! d
+# / cid/ ! d
+
+# finally, print it (without the leading space)
+s/^ //
+p

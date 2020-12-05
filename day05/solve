@@ -1,13 +1,30 @@
 #!/usr/bin/env bash
 
-function part1 {
+function decimal_sorted_seats {
     {
         printf '%s\n' 'ibase=2'
         tr FBLR 0101 < "$1"
     } |
         bc |
-        sort -n |
+        sort -n
+}
+
+function part1 {
+    decimal_sorted_seats "$1" |
         tail -1
 }
 
-part1 "${1:?file not specified}"
+function part2 {
+    decimal_sorted_seats "$1" | {
+        IFS= read -r last_seat
+        while IFS= read -r seat; do
+            if ((seat != last_seat + 1)); then
+                printf '%s\n' "$((last_seat + 1))"
+                break
+            fi
+            last_seat=$seat
+        done
+    }
+}
+
+part2 "${1:?file not specified}"

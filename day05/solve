@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+function part1 {
+    {
+        printf '%s\n' 'ibase=2'
+        tr FBLR 0101 < "$1"
+    } |
+        bc |
+        sort -n |
+        tail -1
+}
+
+part1 "${1:?file not specified}"

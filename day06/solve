@@ -10,17 +10,19 @@ BEGIN {
     }
 }
 
-/^$/ {
+function summarize_answers(    len) {
     len = length(answers)
     print len > "/dev/stderr"
     sum += len
     delete answers
 }
 
+/^$/ {
+    summarize_answers()
+}
+
 ENDFILE {
-    len = length(answers)
-    print len > "/dev/stderr"
-    sum += len
+    summarize_answers()
 
     print sum
     sum = 0

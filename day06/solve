@@ -1,0 +1,27 @@
+#!/usr/bin/gawk -f
+
+BEGIN {
+    FS = ""
+}
+
+/./ {
+    for (i = 1; i <= NF; i++) {
+        answers[$i] = 1
+    }
+}
+
+/^$/ {
+    len = length(answers)
+    print len > "/dev/stderr"
+    sum += len
+    delete answers
+}
+
+ENDFILE {
+    len = length(answers)
+    print len > "/dev/stderr"
+    sum += len
+
+    print sum
+    sum = 0
+}

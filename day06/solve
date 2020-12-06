@@ -6,15 +6,26 @@ BEGIN {
 
 /./ {
     for (i = 1; i <= NF; i++) {
-        answers[$i] = 1
+        answers[$i]++
     }
+    answerers++
 }
 
-function summarize_answers(    len) {
+function summarize_answers(    len, i) {
+    # part 1
     len = length(answers)
+    # part 2
+    len = 0
+    for (i in answers) {
+        if (answers[i] == answerers) {
+            len++
+        }
+    }
+
     print len > "/dev/stderr"
     sum += len
     delete answers
+    answerers = 0
 }
 
 /^$/ {

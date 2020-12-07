@@ -47,4 +47,42 @@ function part1 {
     printf '%d\n' "${#possibleColors[@]}"
 }
 
-part1 "${1?:input file not specified}"
+function part2 {
+    # if colors[A]='1:B 2:C', then A bags *contain* 1 B and 2 C bags
+    # (this is the same order as the input file, but the inverse of colors in part1)
+    declare -A colors
+
+    sed -E '
+      # turn
+      # > light red bags contain 1 bright white bag, 2 muted yellow bags.
+      # into
+      # > light-red 1:bright-white 2:muted-yellow
+
+      s/ bags? contains? ([0-9]+) /|\1:/g;
+      s/ bags?, ([0-9]+) /|\1:/g;
+      s/ bags? contains? no other bags?\.$//;
+      s/ bags?\.$//;
+      s/ /-/g;
+      s/\|/ /g;
+    ' "$1" | while read -r outer inners; do
+        colors["$outer"]=$inners
+    done
+
+    declare -Ai colorBags
+
+    for outer in "${!colors[@]}"; do
+        for inner in ${colors[$outer]}; do
+            printf '%s %s\n' "${inner#*:}" "$outer"
+        done
+    done | tsort | while read -r outer; do
+        let bags=1
+        for inner in ${colors[$outer]}; do
+            let bags+="${inner%:*}"*"${colorBags[${inner#*:}]}"
+        done
+        colorBags["$outer"]=$bags
+    done
+
+    printf '%d\n' "$((${colorBags['shiny-gold']} - 1))" # - 1: don’t count the shiny-gold bag itself
+}
+
+part2 "${1?:input file not specified}"

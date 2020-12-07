@@ -3,44 +3,48 @@
 shopt -s lastpipe
 IFS=' '
 
-# if colors[A]='B C', then A bags can *be contained within* B and C bags
-# (this is the inverse order of the input file!)
-declare -A colors
+function part1 {
+    # if colors[A]='B C', then A bags can *be contained within* B and C bags
+    # (this is the inverse order of the input file!)
+    declare -A colors
 
-sed -E '
-  # turn
-  # > light red bags contain 1 bright white bag, 2 muted yellow bags.
-  # into
-  # > light-red bright-white muted-yellow
-
-  s/ bags? contains? [0-9]+ /|/g;
-  s/ bags?, [0-9]+ /|/g;
-  s/ bags? contains? no other bags?\.$//;
-  s/ bags?\.$//;
-  s/ /-/g;
-  s/\|/ /g;
-' "${1?:input file not specified}" | while read -r outer inners; do
-    for inner in $inners; do
-        colors["$inner"]+=" $outer"
-    done
-done
-
-declare -A possibleColors=(['shiny-gold']='')
-
-for inner in "${!colors[@]}"; do
-    for outer in ${colors[$inner]}; do
-        printf '%s %s\n' "$inner" "$outer"
-    done
-done | tsort | while read -r color; do
-    if [[ -v possibleColors[$color] ]]; then
-        printf >&2 '%s ->\n' "$color"
-        for otherColor in ${colors[$color]}; do
-            printf >&2 ' %s\n' "$otherColor"
-            possibleColors[$otherColor]=''
+    sed -E '
+      # turn
+      # > light red bags contain 1 bright white bag, 2 muted yellow bags.
+      # into
+      # > light-red bright-white muted-yellow
+    
+      s/ bags? contains? [0-9]+ /|/g;
+      s/ bags?, [0-9]+ /|/g;
+      s/ bags? contains? no other bags?\.$//;
+      s/ bags?\.$//;
+      s/ /-/g;
+      s/\|/ /g;
+    ' "$1" | while read -r outer inners; do
+        for inner in $inners; do
+            colors["$inner"]+=" $outer"
         done
-    fi
-done
+    done
 
-unset possibleColors['shiny-gold']
+    declare -A possibleColors=(['shiny-gold']='')
 
-printf '%d\n' "${#possibleColors[@]}"
+    for inner in "${!colors[@]}"; do
+        for outer in ${colors[$inner]}; do
+            printf '%s %s\n' "$inner" "$outer"
+        done
+    done | tsort | while read -r color; do
+        if [[ -v possibleColors[$color] ]]; then
+            printf >&2 '%s ->\n' "$color"
+            for otherColor in ${colors[$color]}; do
+                printf >&2 ' %s\n' "$otherColor"
+                possibleColors[$otherColor]=''
+            done
+        fi
+    done
+
+    unset possibleColors['shiny-gold']
+
+    printf '%d\n' "${#possibleColors[@]}"
+}
+
+part1 "${1?:input file not specified}"

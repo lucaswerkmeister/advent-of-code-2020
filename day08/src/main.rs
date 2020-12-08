@@ -30,7 +30,17 @@ impl From<ParseIntError> for ParseError {
 enum Instruction {
     ACC(i64),
     JMP(i64),
-    NOP,
+    NOP(i64),
+}
+
+impl Instruction {
+    fn toggle(self) -> Option<Instruction> {
+        match self {
+            Instruction::ACC(_argument) => None,
+            Instruction::JMP(argument) => Some(Instruction::NOP(argument)),
+            Instruction::NOP(argument) => Some(Instruction::JMP(argument)),
+        }
+    }
 }
 
 impl FromStr for Instruction {
@@ -43,7 +53,7 @@ impl FromStr for Instruction {
         match operation {
             "acc" => Ok(Instruction::ACC(argument)),
             "jmp" => Ok(Instruction::JMP(argument)),
-            "nop" => Ok(Instruction::NOP),
+            "nop" => Ok(Instruction::NOP(argument)),
             _ => Err(ParseError::UnknownOperation(operation.to_owned())),
         }
     }
@@ -72,6 +82,13 @@ struct Interpreter {
     seen_instructions: HashSet<usize>,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum StepOutcome {
+    Continue,
+    InfiniteLoop(i64),
+    Terminate(i64),
+}
+
 impl Interpreter {
     fn new(program: Program) -> Self {
         Interpreter {
@@ -82,14 +99,14 @@ impl Interpreter {
         }
     }
 
-    fn step(&mut self) -> bool {
+    fn step(&mut self) -> StepOutcome {
         if self.seen_instructions.contains(&self.instruction_pointer) {
-            return false;
+            return StepOutcome::InfiniteLoop(self.accumulator);
         }
         self.seen_instructions.insert(self.instruction_pointer);
         let instruction = match self.program.instructions.get(self.instruction_pointer) {
             Some(instruction) => instruction,
-            None => return false,
+            None => return StepOutcome::Terminate(self.accumulator),
         };
         match instruction {
             Instruction::ACC(argument) => {
@@ -101,23 +118,53 @@ impl Interpreter {
                     .try_into()
                     .expect("JMP out of bounds");
             }
-            Instruction::NOP => {
+            Instruction::NOP(_argument) => {
                 self.instruction_pointer += 1;
             }
         };
-        true
+        StepOutcome::Continue
     }
 }
 
 fn part1(program: Program) -> i64 {
     let mut interpreter = Interpreter::new(program);
-    while interpreter.step() {}
-    interpreter.accumulator
+    loop {
+        match interpreter.step() {
+            StepOutcome::Continue => (),
+            StepOutcome::InfiniteLoop(accumulator) => break accumulator,
+            StepOutcome::Terminate(accumulator) => break accumulator,
+        }
+    }
+}
+
+fn part2(program: Program) -> i64 {
+    for index in 0..program.instructions.len() {
+        let mut toggled_program = Program {
+            instructions: program.instructions.clone()
+        };
+        if let Some(toggled_instruction) = toggled_program.instructions[index].toggle() {
+            toggled_program.instructions[index] = toggled_instruction;
+        } else {
+            continue;
+        }
+
+
+        let mut interpreter = Interpreter::new(toggled_program);
+        loop {
+            match interpreter.step() {
+                StepOutcome::Continue => (),
+                StepOutcome::InfiniteLoop(_accumulator) => break,
+                StepOutcome::Terminate(accumulator) => return accumulator,
+            }
+        }
+    }
+    panic!("No solution found!");
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let program: Program = fs::read_to_string("input")?.parse()?;
     println!("{}", part1(program.clone()));
+    println!("{}", part2(program.clone()));
     Ok(())
 }
 
@@ -152,7 +199,7 @@ mod tests {
         );
         assert_eq!(
             "nop +1234".parse::<Instruction>().unwrap(),
-            Instruction::NOP
+            Instruction::NOP(1234)
         );
     }
 
@@ -181,7 +228,7 @@ acc +6
             .unwrap(),
             Program {
                 instructions: vec![
-                    Instruction::NOP,
+                    Instruction::NOP(0),
                     Instruction::ACC(1),
                     Instruction::JMP(4),
                     Instruction::ACC(3),
@@ -199,7 +246,7 @@ acc +6
     fn test_step_program() {
         let mut interpreter = Interpreter::new(Program {
             instructions: vec![
-                Instruction::NOP,
+                Instruction::NOP(0),
                 Instruction::ACC(1),
                 Instruction::JMP(4),
                 Instruction::ACC(3),
@@ -213,35 +260,72 @@ acc +6
         assert_eq!(0, interpreter.accumulator);
         assert_eq!(0, interpreter.instruction_pointer);
 
-        assert_eq!(true, interpreter.step());
+        assert_eq!(StepOutcome::Continue, interpreter.step());
         assert_eq!(0, interpreter.accumulator);
         assert_eq!(1, interpreter.instruction_pointer);
 
-        assert_eq!(true, interpreter.step());
+        assert_eq!(StepOutcome::Continue, interpreter.step());
         assert_eq!(1, interpreter.accumulator);
         assert_eq!(2, interpreter.instruction_pointer);
 
-        assert_eq!(true, interpreter.step());
+        assert_eq!(StepOutcome::Continue, interpreter.step());
         assert_eq!(1, interpreter.accumulator);
         assert_eq!(6, interpreter.instruction_pointer);
 
-        assert_eq!(true, interpreter.step());
+        assert_eq!(StepOutcome::Continue, interpreter.step());
         assert_eq!(2, interpreter.accumulator);
         assert_eq!(7, interpreter.instruction_pointer);
 
-        assert_eq!(true, interpreter.step());
+        assert_eq!(StepOutcome::Continue, interpreter.step());
         assert_eq!(2, interpreter.accumulator);
         assert_eq!(3, interpreter.instruction_pointer);
 
-        assert_eq!(true, interpreter.step());
+        assert_eq!(StepOutcome::Continue, interpreter.step());
         assert_eq!(5, interpreter.accumulator);
         assert_eq!(4, interpreter.instruction_pointer);
 
-        assert_eq!(true, interpreter.step());
+        assert_eq!(StepOutcome::Continue, interpreter.step());
         assert_eq!(5, interpreter.accumulator);
         assert_eq!(1, interpreter.instruction_pointer);
 
-        assert_eq!(false, interpreter.step());
-        assert_eq!(5, interpreter.accumulator);
+        assert_eq!(StepOutcome::InfiniteLoop(5), interpreter.step());
+    }
+
+    #[test]
+    fn test_part1() {
+        let program = Program {
+            instructions: vec![
+                Instruction::NOP(0),
+                Instruction::ACC(1),
+                Instruction::JMP(4),
+                Instruction::ACC(3),
+                Instruction::JMP(-3),
+                Instruction::ACC(-99),
+                Instruction::ACC(1),
+                Instruction::JMP(-4),
+                Instruction::ACC(6),
+            ],
+        };
+
+        assert_eq!(5, part1(program));
+    }
+
+    #[test]
+    fn test_part2() {
+        let program = Program {
+            instructions: vec![
+                Instruction::NOP(0),
+                Instruction::ACC(1),
+                Instruction::JMP(4),
+                Instruction::ACC(3),
+                Instruction::JMP(-3),
+                Instruction::ACC(-99),
+                Instruction::ACC(1),
+                Instruction::JMP(-4),
+                Instruction::ACC(6),
+            ],
+        };
+
+        assert_eq!(8, part2(program));
     }
 }

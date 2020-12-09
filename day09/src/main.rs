@@ -10,7 +10,8 @@ use std::num::ParseIntError;
 enum PuzzleError {
     IoError, // does not include the io::Error, otherwise we couldn’t derive Clone+Eq+PartialEq
     ParseIntError(ParseIntError),
-    InvalidSum(u64),
+    NoBadSum,
+    NoConsecutiveSum,
 }
 
 impl fmt::Display for PuzzleError {
@@ -33,21 +34,23 @@ impl From<io::Error> for PuzzleError {
     }
 }
 
-fn part1<T: BufRead>(input: T, preamble_length: usize) -> Result<(), PuzzleError> {
+fn parse_input<T: BufRead>(input: T) -> Result<Vec<u64>, PuzzleError> {
+    input.lines().map(|line| line?.parse().map_err(PuzzleError::from)).collect()
+}
+
+fn find_bad_sum(nums: &[u64], preamble_length: usize) -> Option<u64> {
     let mut buffer = VecDeque::<u64>::with_capacity(preamble_length);
     let mut sums = HashMap::<u64, u64>::with_capacity(preamble_length * preamble_length);
-    let mut lines = input.lines();
-    for line in lines.by_ref().take(preamble_length) {
-        let num = line?.parse()?;
+    let mut nums = nums.iter();
+    for num in nums.by_ref().take(preamble_length) {
         for &num2 in &buffer {
             *sums.entry(num + num2).or_default() += 1;
         }
-        buffer.push_back(num);
+        buffer.push_back(*num);
     };
-    for line in lines {
-        let num = line?.parse()?;
-        if !sums.contains_key(&num) {
-            return Err(PuzzleError::InvalidSum(num));
+    for num in nums {
+        if !sums.contains_key(num) {
+            return Some(*num);
         }
         let former_num = buffer.pop_front().expect("empty ring buffer");
         for &num2 in &buffer {
@@ -63,17 +66,33 @@ fn part1<T: BufRead>(input: T, preamble_length: usize) -> Result<(), PuzzleError
             }
             *sums.entry(num + num2).or_default() += 1;
         }
-        buffer.push_back(num);
+        buffer.push_back(*num);
     }
-    Ok(())
+    None
+}
+
+fn part1<T: BufRead>(input: T, preamble_length: usize) -> Result<u64, PuzzleError> {
+    let input = parse_input(input)?;
+    find_bad_sum(&input, preamble_length).ok_or(PuzzleError::NoBadSum)
+}
+
+fn part2<T: BufRead>(input: T, preamble_length: usize) -> Result<u64, PuzzleError> {
+    let input = parse_input(input)?;
+    let bad_sum = find_bad_sum(&input, preamble_length).ok_or(PuzzleError::NoBadSum)?;
+    for upper_limit in 1..input.len() {
+        for lower_limit in 0..upper_limit {
+            let range = &input[lower_limit..upper_limit+1];
+            if bad_sum == range.iter().sum() {
+                return Ok(range.iter().min().expect("empty iterator") + range.iter().max().expect("empty iterator"));
+            }
+        }
+    }
+    Err(PuzzleError::NoConsecutiveSum)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let file = File::open("input")?;
-    match part1(BufReader::new(file), 25) {
-        Err(PuzzleError::InvalidSum(num)) => println!("{}", num),
-        unexpected => panic!("{:?}", unexpected),
-    }
+    println!("{}", part1(BufReader::new(File::open("input")?), 25)?);
+    println!("{}", part2(BufReader::new(File::open("input")?), 25)?);
     Ok(())
 }
 
@@ -82,9 +101,7 @@ mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
-    #[test]
-    fn test_part1() {
-        let input = "
+    const SAMPLE_INPUT: &str = "\
 35
 20
 15
@@ -105,10 +122,16 @@ mod tests {
 277
 309
 576
-"
-        .trim();
-        let preamble_length = 5;
+";
+    const SAMPLE_PREAMBLE_LENGTH: usize = 5;
 
-        assert_eq!(Err(PuzzleError::InvalidSum(127)), part1(BufReader::new(input.as_bytes()), preamble_length));
+    #[test]
+    fn test_part1() {
+        assert_eq!(Ok(127), part1(BufReader::new(SAMPLE_INPUT.as_bytes()), SAMPLE_PREAMBLE_LENGTH));
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(Ok(62), part2(BufReader::new(SAMPLE_INPUT.as_bytes()), SAMPLE_PREAMBLE_LENGTH));
     }
 }

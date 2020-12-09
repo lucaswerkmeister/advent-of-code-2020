@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, VecDeque};
 use std::collections::hash_map::Entry;
 use std::error::Error;
@@ -79,11 +80,14 @@ fn part1<T: BufRead>(input: T, preamble_length: usize) -> Result<u64, PuzzleErro
 fn part2<T: BufRead>(input: T, preamble_length: usize) -> Result<u64, PuzzleError> {
     let input = parse_input(input)?;
     let bad_sum = find_bad_sum(&input, preamble_length).ok_or(PuzzleError::NoBadSum)?;
-    for upper_limit in 1..input.len() {
-        for lower_limit in 0..upper_limit {
+    for upper_limit in 2..input.len() {
+        for lower_limit in (0..upper_limit-1).rev() {
             let range = &input[lower_limit..upper_limit+1];
-            if bad_sum == range.iter().sum() {
-                return Ok(range.iter().min().expect("empty iterator") + range.iter().max().expect("empty iterator"));
+            let sum = range.iter().sum();
+            match bad_sum.cmp(&sum) {
+                Ordering::Greater => continue, // grow range by decreasing lower_limit
+                Ordering::Equal => return Ok(range.iter().min().expect("empty iterator") + range.iter().max().expect("empty iterator")),
+                Ordering::Less => break, // no point in growing range further
             }
         }
     }

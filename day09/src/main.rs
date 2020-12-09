@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
-use std::collections::{HashMap, VecDeque};
 use std::collections::hash_map::Entry;
+use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::fmt;
 use std::fs::File;
@@ -36,7 +36,10 @@ impl From<io::Error> for PuzzleError {
 }
 
 fn parse_input<T: BufRead>(input: T) -> Result<Vec<u64>, PuzzleError> {
-    input.lines().map(|line| line?.parse().map_err(PuzzleError::from)).collect()
+    input
+        .lines()
+        .map(|line| line?.parse().map_err(PuzzleError::from))
+        .collect()
 }
 
 fn find_bad_sum(nums: &[u64], preamble_length: usize) -> Option<u64> {
@@ -48,7 +51,7 @@ fn find_bad_sum(nums: &[u64], preamble_length: usize) -> Option<u64> {
             *sums.entry(num + num2).or_default() += 1;
         }
         buffer.push_back(*num);
-    };
+    }
     for num in nums {
         if !sums.contains_key(num) {
             return Some(*num);
@@ -62,7 +65,7 @@ fn find_bad_sum(nums: &[u64], preamble_length: usize) -> Option<u64> {
                     if *sum == 0 {
                         entry.remove();
                     }
-                },
+                }
                 _ => panic!("missing sum {}", former_num + num2),
             }
             *sums.entry(num + num2).or_default() += 1;
@@ -81,12 +84,15 @@ fn part2<T: BufRead>(input: T, preamble_length: usize) -> Result<u64, PuzzleErro
     let input = parse_input(input)?;
     let bad_sum = find_bad_sum(&input, preamble_length).ok_or(PuzzleError::NoBadSum)?;
     for upper_limit in 2..input.len() {
-        for lower_limit in (0..upper_limit-1).rev() {
-            let range = &input[lower_limit..upper_limit+1];
+        for lower_limit in (0..upper_limit - 1).rev() {
+            let range = &input[lower_limit..upper_limit + 1];
             let sum = range.iter().sum();
             match bad_sum.cmp(&sum) {
                 Ordering::Greater => continue, // grow range by decreasing lower_limit
-                Ordering::Equal => return Ok(range.iter().min().expect("empty iterator") + range.iter().max().expect("empty iterator")),
+                Ordering::Equal => {
+                    return Ok(range.iter().min().expect("empty iterator")
+                        + range.iter().max().expect("empty iterator"))
+                }
                 Ordering::Less => break, // no point in growing range further
             }
         }
@@ -131,11 +137,23 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(Ok(127), part1(BufReader::new(SAMPLE_INPUT.as_bytes()), SAMPLE_PREAMBLE_LENGTH));
+        assert_eq!(
+            Ok(127),
+            part1(
+                BufReader::new(SAMPLE_INPUT.as_bytes()),
+                SAMPLE_PREAMBLE_LENGTH
+            )
+        );
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(Ok(62), part2(BufReader::new(SAMPLE_INPUT.as_bytes()), SAMPLE_PREAMBLE_LENGTH));
+        assert_eq!(
+            Ok(62),
+            part2(
+                BufReader::new(SAMPLE_INPUT.as_bytes()),
+                SAMPLE_PREAMBLE_LENGTH
+            )
+        );
     }
 }

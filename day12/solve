@@ -1,0 +1,49 @@
+#!/usr/bin/env Rscript
+
+part1 <- function(instructions) {
+    pos <- c(0, 0)
+    dir <- matrix(c(1, 0,
+                    0, 1),
+                  nrow=2,
+                  ncol=2)
+    for (instruction in readLines(commandArgs(TRUE)[1])) {
+        action <- substr(instruction, 1, 1)
+        value <- as.numeric(substr(instruction, 2, nchar(instruction)))
+        switch(
+            action,
+            'N'={
+                pos <- pos + c(0, 1) * value
+            },
+            'S'={
+                pos <- pos + c(0, -1) * value
+            },
+            'E'={
+                pos <- pos + c(1, 0) * value
+            },
+            'W'={
+                pos <- pos + c(-1, 0) * value
+            },
+            'L'={
+                ang <- -value * pi / 180
+                dir <- matrix(c(cos(ang), -sin(ang),
+                                sin(ang), cos(ang)),
+                              nrow=2,
+                              ncol=2) %*% dir
+            },
+            'R'={
+                ang <- value * pi / 180
+                dir <- matrix(c(cos(ang), -sin(ang),
+                                sin(ang), cos(ang)),
+                              nrow=2,
+                              ncol=2) %*% dir
+            },
+            'F'={
+                pos <- pos + dir %*% c(1, 0) * value
+            },
+        )
+    }
+    sum(abs(pos))
+}
+
+instructions <- readLines(commandArgs(TRUE)[1])
+write(part1(instructions), stdout())

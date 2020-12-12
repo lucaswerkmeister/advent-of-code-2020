@@ -66,4 +66,4 @@ The script solves both part 1 and 2 and prints both answers to standard output.
 [R Programming]: https://en.wikibooks.org/wiki/R_Programming
 [R-switch]: https://stackoverflow.com/q/10393508/1420237
 [affine transformations]: https://www.wikidata.org/wiki/Special:GoToLinkedPage/enwiki/Q382497
-[R-switch-answer: https://stackoverflow.com/a/10393550/1420237
+[R-switch-answer]: https://stackoverflow.com/a/10393550/1420237

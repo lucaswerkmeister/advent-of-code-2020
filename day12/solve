@@ -72,16 +72,14 @@ part2 <- function(instructions) {
             },
             'L'={
                 ang <- -value * pi / 180
-                wp <- (rot(ang) %*% (wp - pos)) + pos
+                wp <- rot(ang) %*% wp
             },
             'R'={
                 ang <- value * pi / 180
-                wp <- (rot(ang) %*% (wp - pos)) + pos
+                wp <- rot(ang) %*% wp
             },
             'F'={
-                mov <- wp - pos
-                pos <- pos + value * mov
-                wp <- wp + value * mov
+                pos <- pos + value * wp
             },
         )
     }

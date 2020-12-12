@@ -49,6 +49,8 @@ replacing the direction state with a waypoint.
 Moving the waypoint is also fairly straightforward –
 for the rotation actions, we have to do a transformation to make the waypoint’s position relative to the ship,
 but that’s just a simple subtraction and then addition again at the end.
+(A few hours later, I realized that we can also just keep the waypoint relative to the ship at all times,
+which simplifies the code even more.)
 
 ## Usage
 

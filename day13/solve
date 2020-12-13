@@ -66,6 +66,59 @@ function part2_bruteforce_rust {
     cargo run --release --quiet -- "$1"
 }
 
+function part2_chinese_remainder_theorem {
+    {
+        IFS= read -r _ignored
+        IFS=, read -a inputs
+    } < "$1"
+
+    a_i=()
+    m_i=()
+    M=1
+    for ((i=0; i<${#inputs[@]}; i++)); do
+        if [[ ${inputs[$i]} == 'x' ]]; then
+            continue
+        fi
+        let m_i[i]=inputs[i]
+        let a_i[i]=(m_i[i] - i)
+        let M*=m_i[i]
+    done
+
+    M_i=()
+    for i in "${!m_i[@]}"; do
+        let M_i[i]=M/m_i[i]
+    done
+
+    x=0
+    for i in "${!m_i[@]}"; do
+        read -r d r_i s_i < <(extended_euklid "${m_i[$i]}" "${M_i[$i]}")
+        if ((d != 1)); then
+            printf >&2 '%s: extended_euklid returned d ≠ 1 (%d), inputs are not coprime\n' "$0" "$d"
+            return 1
+        fi
+        let e_i=(s_i * M_i[i])
+        let x+=(a_i[i] * e_i)
+    done
+    let x=(x % M)
+    if ((x < 0)); then
+        let x+=M
+    fi
+    printf '%s\n' "$x"
+}
+
+# extended_euklid a b
+# prints d s t, such that
+# d = s * a + b * t
+function extended_euklid {
+    if (($2 == 0)); then
+        printf '%d 1 0\n' "$1"
+    else
+        read -r d_ s_ t_ < <(extended_euklid "$2" "$(($1 % $2))")
+        printf '%d %d %d\n' "$d_" "$t_" "$((s_ - ($1 / $2) * t_))"
+    fi
+}
+
 part1 "${1:?input file required}"
-part2_bruteforce_bash "${1:?input file required}"
-part2_bruteforce_rust "${1:?input file required}"
+# part2_bruteforce_bash "${1:?input file required}"
+# part2_bruteforce_rust "${1:?input file required}"
+part2_chinese_remainder_theorem "${1:?input file required}"

@@ -26,7 +26,7 @@ function part1 {
     printf '%d\n' "$((earliest_departure * shortest_waiting_time))"
 }
 
-function part2 {
+function part2_bruteforce_bash {
     local IFS
     {
         IFS= read -r _ignored
@@ -62,5 +62,10 @@ function part2 {
     done
 }
 
+function part2_bruteforce_rust {
+    cargo run --release --quiet -- "$1"
+}
+
 part1 "${1:?input file required}"
-part2 "${1:?input file required}"
+part2_bruteforce_bash "${1:?input file required}"
+part2_bruteforce_rust "${1:?input file required}"

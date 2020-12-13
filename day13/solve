@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+function waiting_time {
+    local departure=$1
+    local my_departure=$2
+    printf '%d' "$((departure - (my_departure % departure)))"
+}
+
+function part1 {
+    local IFS
+    {
+        IFS= read -r my_departure
+        IFS= read -r departures
+    } < "$1"
+    IFS=,
+    for departure in $departures; do
+        if [[ $departure == 'x' ]]; then
+            continue
+        fi
+        waiting_time=$(waiting_time "$departure" "$my_departure")
+        if [[ ! -v shortest_waiting_time ]] || ((waiting_time < shortest_waiting_time)); then
+            earliest_departure=$departure
+            shortest_waiting_time=$waiting_time
+        fi
+    done
+    printf '%d\n' "$((earliest_departure * shortest_waiting_time))"
+}
+
+part1 "${1:?input file required}"

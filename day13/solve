@@ -26,4 +26,41 @@ function part1 {
     printf '%d\n' "$((earliest_departure * shortest_waiting_time))"
 }
 
+function part2 {
+    local IFS
+    {
+        IFS= read -r _ignored
+        IFS= read -r departures_line
+    } < "$1"
+    IFS=,
+    departures_by_offset=($departures_line)
+    offsets_by_departure=()
+    for offset in "${!departures_by_offset[@]}"; do
+        departure=${departures_by_offset["$offset"]}
+        if [[ $departure == 'x' ]]; then
+            continue;
+        fi
+        offsets_by_departure["$departure"]=$offset
+        if [[ ! -v last_departure ]] || ((departure > last_departure)); then
+            last_departure=$departure
+        fi
+    done
+    last_departure_offset=${offsets_by_departure["$last_departure"]}
+    for ((i=0; ; i++)); do
+        t=$((i * last_departure + last_departure - last_departure_offset))
+        for departure in "${!offsets_by_departure[@]}"; do
+            if [[ $departure == $last_departure ]]; then
+                continue
+            fi
+            offset=${offsets_by_departure["$departure"]}
+            if (((t + offset) % departure)); then
+                continue 2
+            fi
+        done
+        printf '%s\n' "$t"
+        break
+    done
+}
+
 part1 "${1:?input file required}"
+part2 "${1:?input file required}"

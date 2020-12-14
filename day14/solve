@@ -47,4 +47,51 @@ function part1 {
     printf '%s\n' "$sum"
 }
 
+# part2_addresses address_10 mask_2X
+# prints one address_10 per line
+function part2_addresses {
+    local i
+    for ((i=0; i<36; i++)); do
+        if [[ ${2:i:1} == 'X' ]]; then
+            part2_addresses "$(($1 & ~(1 << (35 - i))))" "${2:0:i}0${2:i+1}"
+            part2_addresses "$(($1 | (1 << (35 - i))))" "${2:0:i}0${2:i+1}"
+            return
+        fi
+    done
+    printf '%s\n' "$(($1 | 2#$2))"
+}
+
+function part2 {
+    local lhs eq rhs rest mask address mem i sum
+
+    while IFS=' ' read -r lhs eq rhs rest; do
+        if [[ $eq != '=' ]]; then
+            printf >&2 '%s: expected second word to be ‘=’, was: %s\n' "$0" "$eq"
+            return 1
+        fi
+        if [[ $rest ]]; then
+            printf >&2 '%s: unexpected extra word(s): %s\n' "$0" "$rest"
+            return 1
+        fi
+        if [[ $lhs == 'mask' ]]; then
+            if [[ ${#rhs} != 36 ]]; then
+                printf >&2 '%s: mask is not 36 characters long: %s\n' "$0" "$rhs"
+            fi
+            mask=$rhs
+        elif [[ $lhs =~ mem\[([0-9]*)\] ]]; then
+            address=${BASH_REMATCH[1]}
+            while IFS= read -r address; do
+                mem[address]=$rhs
+            done < <(part2_addresses "$address" "$mask")
+        fi
+    done < "$1"
+
+    for i in "${!mem[@]}"; do
+        let sum+=mem[i]
+    done
+
+    printf '%s\n' "$sum"
+}
+
 part1 "${1:?input file missing}"
+part2 "${1:?input file missing}"

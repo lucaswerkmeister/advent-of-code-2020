@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+function part1 {
+    local lhs eq rhs rest mask i address mem sum
+
+    while IFS=' ' read -r lhs eq rhs rest; do
+        if [[ $eq != '=' ]]; then
+            printf >&2 '%s: expected second word to be ‘=’, was: %s\n' "$0" "$eq"
+            return 1
+        fi
+        if [[ $rest ]]; then
+            printf >&2 '%s: unexpected extra word(s): %s\n' "$0" "$rest"
+            return 1
+        fi
+        if [[ $lhs == 'mask' ]]; then
+            if [[ ${#rhs} != 36 ]]; then
+                printf >&2 '%s: mask is not 36 characters long: %s\n' "$0" "$rhs"
+            fi
+            mask=()
+            for ((i=0; i<36; i++)); do
+                case ${rhs:i:1} in
+                    0) mask[i]=0;;
+                    1) mask[i]=1;;
+                    X) ;;
+                    *)
+                        printf >&2 '%s: unexpected character ‘%s’ in mask: %s\n' "$0" "${rhs:i:1}" "$rhs"
+                        return 1
+                        ;;
+                esac
+            done
+        elif [[ $lhs =~ mem\[([0-9]*)\] ]]; then
+            address=${BASH_REMATCH[1]}
+            for i in "${!mask[@]}"; do
+                case ${mask[i]} in
+                    0) rhs=$((rhs & ~(1 << (35 - i))));;
+                    1) rhs=$((rhs | (1 << (35 - i))));;
+                esac
+            done
+            mem[address]=$rhs
+        fi
+    done < "$1"
+
+    for i in "${!mem[@]}"; do
+        let sum+=mem[i]
+    done
+
+    printf '%s\n' "$sum"
+}
+
+part1 "${1:?input file missing}"

@@ -1,34 +1,36 @@
-#!/usr/bin/env bash
-IFS=, read -r -a numbers < "${1:-/dev/stdin}"
-turn=1
-turns=()
-last_number=
-for number in "${numbers[@]}"; do
-    last_number=$number
-    turns[last_number]=$turn
-    ((turn++))
-done
-unset turns[last_number]
-((turn--))
-while ((turn < 2020)); do
-    last_turn=${turns[last_number]};
-    turns[last_number]=$turn
-    if [[ $last_turn && $last_turn != $turn ]]; then
-        last_number=$((turn - last_turn))
-    else
-        last_number=0
-    fi
-    ((turn++))
-done
-printf '%s\n' "$last_number"
-while ((turn < 30000000)); do
-    last_turn=${turns[last_number]};
-    turns[last_number]=$turn
-    if [[ $last_turn && $last_turn != $turn ]]; then
-        last_number=$((turn - last_turn))
-    else
-        last_number=0
-    fi
-    ((turn++))
-done
-printf '%s\n' "$last_number"
+#!/usr/bin/env node
+const fs = require('fs');
+const input = fs.readFileSync(process.argv[2] || '/dev/stdin', 'utf8').trim();
+const numbers = input.split(',');
+let turn = 1;
+let turns = {};
+let last_number = null;
+for (const number of numbers) {
+    last_number = parseInt(number);
+    turns[last_number] = turn;
+    turn++;
+}
+delete turns[last_number];
+turn--;
+while (turn < 2020) {
+    last_turn = turns[last_number];
+    turns[last_number] = turn;
+    if (last_turn !== undefined && last_turn !== turn) {
+        last_number = turn - last_turn;
+    } else {
+        last_number = 0;
+    }
+    turn++;
+}
+console.log(last_number);
+while (turn < 30000000) {
+    last_turn = turns[last_number];
+    turns[last_number] = turn;
+    if (last_turn !== undefined && last_turn !== turn) {
+        last_number = turn - last_turn;
+    } else {
+        last_number = 0;
+    }
+    turn++;
+}
+console.log(last_number);

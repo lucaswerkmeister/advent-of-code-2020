@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+IFS=, read -r -a numbers < "${1:-/dev/stdin}"
+turn=1
+turns=()
+last_number=
+for number in "${numbers[@]}"; do
+    last_number=$number
+    turns[last_number]=$turn
+    ((turn++))
+done
+unset turns[last_number]
+((turn--))
+while ((turn < 2020)); do
+    last_turn=${turns[last_number]};
+    turns[last_number]=$turn
+    if [[ $last_turn && $last_turn != $turn ]]; then
+        last_number=$((turn - last_turn))
+    else
+        last_number=0
+    fi
+    ((turn++))
+done
+printf '%s\n' "$last_number"

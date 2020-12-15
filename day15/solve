@@ -21,3 +21,14 @@ while ((turn < 2020)); do
     ((turn++))
 done
 printf '%s\n' "$last_number"
+while ((turn < 30000000)); do
+    last_turn=${turns[last_number]};
+    turns[last_number]=$turn
+    if [[ $last_turn && $last_turn != $turn ]]; then
+        last_number=$((turn - last_turn))
+    else
+        last_number=0
+    fi
+    ((turn++))
+done
+printf '%s\n' "$last_number"

@@ -188,18 +188,19 @@ impl Input {
                 break;
             }
         }
-
-        let mut product = 1;
-        for ((i, possible_field), value) in possible_fields.iter().enumerate().zip(&self.your_ticket.values) {
-            if possible_field.len() != 1 {
-                panic!("Field {} not unambiguous ({} options)", i, possible_field.len());
-            }
-            let field = &possible_field[0];
-            if field.name.starts_with("departure") {
-                product *= value;
-            }
-        }
-        product
+        possible_fields
+            .iter()
+            .enumerate()
+            .map(|(i, possible_field)| {
+                if possible_field.len() != 1 {
+                    panic!("Field {} not unambiguous ({} options)", i, possible_field.len());
+                }
+                &possible_field[0]
+            })
+            .zip(&self.your_ticket.values)
+            .filter(|(possible_field, _value)| possible_field.name.starts_with("departure"))
+            .map(|(_possible_field, value)| value)
+            .product()
     }
 }
 

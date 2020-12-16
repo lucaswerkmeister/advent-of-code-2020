@@ -150,6 +150,57 @@ impl Input {
             .flatten()
             .sum()
     }
+
+    fn validate(&self) -> Self {
+        Self {
+            fields: self.fields.clone(),
+            your_ticket: self.your_ticket.clone(),
+            nearby_tickets: self.nearby_tickets
+                .iter()
+                .filter(|&ticket| ticket.invalid_values(&self.fields).is_empty())
+                .cloned()
+                .collect(),
+        }
+    }
+
+    fn part2(&self) -> u64 {
+        let mut possible_fields = vec![];
+        for _i in 0..self.your_ticket.values.len() {
+            possible_fields.push(self.fields.clone());
+        }
+        for ticket in &self.nearby_tickets {
+            for (i, &value) in ticket.values.iter().enumerate() {
+                possible_fields[i].retain(|field| field.accepts(value));
+            }
+        }
+        let mut unambiguous_fields = vec![];
+        loop {
+            let mut had_ambiguous_fields = false;
+            for possible_field in possible_fields.iter_mut() {
+                if possible_field.len() == 1 {
+                    unambiguous_fields.push(possible_field[0].clone());
+                } else {
+                    had_ambiguous_fields = true;
+                    possible_field.retain(|field| !unambiguous_fields.contains(&field));
+                }
+            }
+            if !had_ambiguous_fields {
+                break;
+            }
+        }
+
+        let mut product = 1;
+        for ((i, possible_field), value) in possible_fields.iter().enumerate().zip(&self.your_ticket.values) {
+            if possible_field.len() != 1 {
+                panic!("Field {} not unambiguous ({} options)", i, possible_field.len());
+            }
+            let field = &possible_field[0];
+            if field.name.starts_with("departure") {
+                product *= value;
+            }
+        }
+        product
+    }
 }
 
 impl FromStr for Input {
@@ -194,6 +245,7 @@ impl FromStr for Input {
 fn main() -> Result<(), Box<dyn Error>> {
     let input: Input = fs::read_to_string("input")?.parse()?;
     println!("{:?}", input.part1());
+    println!("{:?}", input.validate().part2());
     Ok(())
 }
 
@@ -306,6 +358,51 @@ nearby tickets:
 "
                 .parse().unwrap();
         assert_eq!(71, sample_input.part1());
+    }
+
+    #[test]
+    fn test_validate_input() {
+        let sample_input: Input = "\
+class: 1-3 or 5-7
+row: 6-11 or 33-44
+seat: 13-40 or 45-50
+
+your ticket:
+7,1,14
+
+nearby tickets:
+7,3,47
+40,4,50
+55,2,20
+38,6,12
+"
+                .parse().unwrap();
+        assert_eq!(
+            Input {
+                fields: vec![
+                    Field {
+                        r1: 1..=3,
+                        r2: 5..=7,
+                        name: "class".to_owned(),
+                    },
+                    Field {
+                        r1: 6..=11,
+                        r2: 33..=44,
+                        name: "row".to_owned(),
+                    },
+                    Field {
+                        r1: 13..=40,
+                        r2: 45..=50,
+                        name: "seat".to_owned(),
+                    },
+                ],
+                your_ticket: Ticket { values: vec![7, 1, 14] },
+                nearby_tickets: vec![
+                    Ticket { values: vec![7, 3, 47] },
+                ],
+            },
+            sample_input.validate()
+        );
     }
 
     #[test]

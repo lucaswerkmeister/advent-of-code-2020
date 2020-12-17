@@ -1,3 +1,4 @@
+use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::convert::TryInto;
 use std::error::Error;
@@ -44,6 +45,12 @@ impl State3d {
             }
         }
         let mut active_cells = HashSet::with_capacity(self.active_cells.len());
+        let mut min_x = i64::MAX;
+        let mut max_x = i64::MIN;
+        let mut min_y = i64::MAX;
+        let mut max_y = i64::MIN;
+        let mut min_z = i64::MAX;
+        let mut max_z = i64::MIN;
         for (x, y, z) in potentially_active_cells {
             let mut currently_active = false;
             let mut currently_active_neighbors = 0;
@@ -65,16 +72,19 @@ impl State3d {
                 || (!currently_active && currently_active_neighbors == 3)
             {
                 active_cells.insert((x, y, z));
+                min_x = min(min_x, x);
+                max_x = max(max_x, x);
+                min_y = min(min_y, y);
+                max_y = max(max_y, y);
+                min_z = min(min_z, z);
+                max_z = max(max_z, z);
             }
         }
         Self {
             cycles: self.cycles + 1,
-            xs: *active_cells.iter().map(|(x, _y, _z)| x).min().unwrap_or(&0)
-                ..=*active_cells.iter().map(|(x, _y, _z)| x).max().unwrap_or(&0),
-            ys: *active_cells.iter().map(|(_x, y, _z)| y).min().unwrap_or(&0)
-                ..=*active_cells.iter().map(|(_x, y, _z)| y).max().unwrap_or(&0),
-            zs: *active_cells.iter().map(|(_x, _y, z)| z).min().unwrap_or(&0)
-                ..=*active_cells.iter().map(|(_x, _y, z)| z).max().unwrap_or(&0),
+            xs: min_x..=max_x,
+            ys: min_y..=max_y,
+            zs: min_z..=max_z,
             active_cells,
         }
     }
@@ -164,6 +174,14 @@ impl State4d {
             }
         }
         let mut active_cells = HashSet::with_capacity(self.active_cells.len());
+        let mut min_x = i64::MAX;
+        let mut max_x = i64::MIN;
+        let mut min_y = i64::MAX;
+        let mut max_y = i64::MIN;
+        let mut min_z = i64::MAX;
+        let mut max_z = i64::MIN;
+        let mut min_w = i64::MAX;
+        let mut max_w = i64::MIN;
         for (x, y, z, w) in potentially_active_cells {
             let mut currently_active = false;
             let mut currently_active_neighbors = 0;
@@ -190,50 +208,22 @@ impl State4d {
                 || (!currently_active && currently_active_neighbors == 3)
             {
                 active_cells.insert((x, y, z, w));
+                min_x = min(min_x, x);
+                max_x = max(max_x, x);
+                min_y = min(min_y, y);
+                max_y = max(max_y, y);
+                min_z = min(min_z, z);
+                max_z = max(max_z, z);
+                min_w = min(min_w, w);
+                max_w = max(max_w, w);
             }
         }
         Self {
             cycles: self.cycles + 1,
-            xs: *active_cells
-                .iter()
-                .map(|(x, _y, _z, _w)| x)
-                .min()
-                .unwrap_or(&0)
-                ..=*active_cells
-                    .iter()
-                    .map(|(x, _y, _z, _w)| x)
-                    .max()
-                    .unwrap_or(&0),
-            ys: *active_cells
-                .iter()
-                .map(|(_x, y, _z, _w)| y)
-                .min()
-                .unwrap_or(&0)
-                ..=*active_cells
-                    .iter()
-                    .map(|(_x, y, _z, _w)| y)
-                    .max()
-                    .unwrap_or(&0),
-            zs: *active_cells
-                .iter()
-                .map(|(_x, _y, z, _w)| z)
-                .min()
-                .unwrap_or(&0)
-                ..=*active_cells
-                    .iter()
-                    .map(|(_x, _y, z, _w)| z)
-                    .max()
-                    .unwrap_or(&0),
-            ws: *active_cells
-                .iter()
-                .map(|(_x, _y, _z, w)| w)
-                .min()
-                .unwrap_or(&0)
-                ..=*active_cells
-                    .iter()
-                    .map(|(_x, _y, _z, w)| w)
-                    .max()
-                    .unwrap_or(&0),
+            xs: min_x..=max_x,
+            ys: min_y..=max_y,
+            zs: min_z..=max_z,
+            ws: min_w..=max_w,
             active_cells,
         }
     }

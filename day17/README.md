@@ -18,6 +18,9 @@ then check for each if it’s actually active
 (has the right number of active neighbors depending on it being active or inactive so far) or not.
 The state struct also has fields for the range of potentially occupied coordinates (useful for printing),
 which have to be updated accordingly.
+(Initially that update was a bunch of iterations over the active cells at the end,
+then I rewrote it to keep track of the min/max values while updating the cells,
+but it made no difference on performance.)
 
 ## Usage
 

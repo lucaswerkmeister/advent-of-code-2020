@@ -35,6 +35,22 @@ enum Expr {
 }
 
 impl Expr {
+    fn lit(num: u64) -> Self {
+        Self::Lit(num)
+    }
+
+    fn add(left: Expr, right: Expr) -> Self {
+        Self::Add(Box::new(left), Box::new(right))
+    }
+
+    fn mul(left: Expr, right: Expr) -> Self {
+        Self::Mul(Box::new(left), Box::new(right))
+    }
+
+    fn par(expr: Expr) -> Self {
+        Self::Par(Box::new(expr))
+    }
+
     fn eval(&self) -> u64 {
         match self {
             Self::Lit(num) => *num,
@@ -44,16 +60,16 @@ impl Expr {
         }
     }
 
-    fn lit(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
+    fn parse_lit(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
         match s.find(|c: char| !c.is_ascii_digit()) {
             Some(i) => Ok((Self::Lit(s[..i].parse()?), Some(&s[i..].trim()))),
             None => Ok((Self::Lit(s.parse()?), None)),
         }
     }
 
-    fn par(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
+    fn parse_par(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
         if s.starts_with("(") {
-            let (expr, rest) = Self::expr(&s[1..])?;
+            let (expr, rest) = Self::parse_expr(&s[1..])?;
             match rest {
                 Some(rest) if rest.starts_with(")") => {
                     let rest = rest[1..].trim();
@@ -63,29 +79,29 @@ impl Expr {
                 _ => Err(ParseExprError::NoCloseParen),
             }
         } else {
-            panic!("par() called with non-par string: {}", s);
+            panic!("parse_par() called with non-par string: {}", s);
         }
     }
 
-    fn atom(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
+    fn parse_atom(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
         if s.starts_with("(") {
-            Self::par(s)
+            Self::parse_par(s)
         } else {
-            Self::lit(s)
+            Self::parse_lit(s)
         }
     }
 
-    fn expr(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
-        let mut cur = Self::atom(s)?;
+    fn parse_expr(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
+        let mut cur = Self::parse_atom(s)?;
         while let Some(rest) = cur.1 {
             if rest.starts_with(")") {
                 break;
             }
             if rest.starts_with("+") {
-                let (atom, rest) = Self::atom(&rest[1..].trim())?;
+                let (atom, rest) = Self::parse_atom(&rest[1..].trim())?;
                 cur = (Self::Add(Box::new(cur.0), Box::new(atom)), rest);
             } else if rest.starts_with("*") {
-                let (atom, rest) = Self::atom(&rest[1..].trim())?;
+                let (atom, rest) = Self::parse_atom(&rest[1..].trim())?;
                 cur = (Self::Mul(Box::new(cur.0), Box::new(atom)), rest);
             } else {
                 return Err(ParseExprError::UnknownOperator(
@@ -118,7 +134,7 @@ impl FromStr for Expr {
     type Err = ParseExprError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (expr, rest) = Self::expr(s)?;
+        let (expr, rest) = Self::parse_expr(s)?;
         if rest.is_some() {
             return Err(ParseExprError::TrailingGarbage);
         }
@@ -147,38 +163,29 @@ mod tests {
     #[test]
     fn test_parse_expr() {
         assert_eq!(
-            Ok(Expr::Add(
-                Box::new(Expr::Mul(
-                    Box::new(Expr::Add(
-                        Box::new(Expr::Mul(
-                            Box::new(Expr::Add(Box::new(Expr::Lit(1)), Box::new(Expr::Lit(2)))),
-                            Box::new(Expr::Lit(3))
-                        )),
-                        Box::new(Expr::Lit(4))
-                    )),
-                    Box::new(Expr::Lit(5))
-                )),
-                Box::new(Expr::Lit(6))
+            Ok(Expr::add(
+                Expr::mul(
+                    Expr::add(
+                        Expr::mul(Expr::add(Expr::lit(1), Expr::lit(2)), Expr::lit(3)),
+                        Expr::lit(4)
+                    ),
+                    Expr::lit(5)
+                ),
+                Expr::lit(6)
             )),
             "1 + 2 * 3 + 4 * 5 + 6".parse()
         );
 
         assert_eq!(
-            Ok(Expr::Add(
-                Box::new(Expr::Add(
-                    Box::new(Expr::Lit(1)),
-                    Box::new(Expr::Par(Box::new(Expr::Mul(
-                        Box::new(Expr::Lit(2)),
-                        Box::new(Expr::Lit(3))
-                    ))))
-                )),
-                Box::new(Expr::Par(Box::new(Expr::Mul(
-                    Box::new(Expr::Lit(4)),
-                    Box::new(Expr::Par(Box::new(Expr::Add(
-                        Box::new(Expr::Lit(5)),
-                        Box::new(Expr::Lit(6))
-                    ))))
-                ))))
+            Ok(Expr::add(
+                Expr::add(
+                    Expr::lit(1),
+                    Expr::par(Expr::mul(Expr::lit(2), Expr::lit(3)))
+                ),
+                Expr::par(Expr::mul(
+                    Expr::lit(4),
+                    Expr::par(Expr::add(Expr::lit(5), Expr::lit(6)))
+                ))
             )),
             "1 + (2 * 3) + (4 * (5 + 6))".parse()
         );

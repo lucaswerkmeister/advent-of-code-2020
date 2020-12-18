@@ -91,18 +91,33 @@ impl Expr {
         }
     }
 
-    fn parse_expr(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
+    fn parse_factor(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
         let mut cur = Self::parse_atom(s)?;
         while let Some(rest) = cur.1 {
-            if rest.starts_with(")") {
+            if rest.starts_with(")") || rest.starts_with("*") {
                 break;
             }
             if rest.starts_with("+") {
                 let (atom, rest) = Self::parse_atom(&rest[1..].trim())?;
                 cur = (Self::Add(Box::new(cur.0), Box::new(atom)), rest);
-            } else if rest.starts_with("*") {
-                let (atom, rest) = Self::parse_atom(&rest[1..].trim())?;
-                cur = (Self::Mul(Box::new(cur.0), Box::new(atom)), rest);
+            } else {
+                return Err(ParseExprError::UnknownOperator(
+                    rest.chars().next().unwrap(),
+                ));
+            }
+        }
+        Ok(cur)
+    }
+
+    fn parse_expr(s: &str) -> Result<(Self, Option<&str>), ParseExprError> {
+        let mut cur = Self::parse_factor(s)?;
+        while let Some(rest) = cur.1 {
+            if rest.starts_with(")") {
+                break;
+            }
+            if rest.starts_with("*") {
+                let (factor, rest) = Self::parse_factor(&rest[1..].trim())?;
+                cur = (Self::Mul(Box::new(cur.0), Box::new(factor)), rest);
             } else {
                 return Err(ParseExprError::UnknownOperator(
                     rest.chars().next().unwrap(),
@@ -142,7 +157,7 @@ impl FromStr for Expr {
     }
 }
 
-fn part1(exprs: &[Expr]) -> u64 {
+fn part2(exprs: &[Expr]) -> u64 {
     exprs.iter().map(Expr::eval).sum()
 }
 
@@ -151,7 +166,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .lines()
         .map(|s| s.parse::<Expr>())
         .collect::<Result<_, _>>()?;
-    println!("{}", part1(&exprs));
+    println!("{}", part2(&exprs));
     Ok(())
 }
 
@@ -163,15 +178,12 @@ mod tests {
     #[test]
     fn test_parse_expr() {
         assert_eq!(
-            Ok(Expr::add(
+            Ok(Expr::mul(
                 Expr::mul(
-                    Expr::add(
-                        Expr::mul(Expr::add(Expr::lit(1), Expr::lit(2)), Expr::lit(3)),
-                        Expr::lit(4)
-                    ),
-                    Expr::lit(5)
+                    Expr::add(Expr::lit(1), Expr::lit(2)),
+                    Expr::add(Expr::lit(3), Expr::lit(4))
                 ),
-                Expr::lit(6)
+                Expr::add(Expr::lit(5), Expr::lit(6))
             )),
             "1 + 2 * 3 + 4 * 5 + 6".parse()
         );
@@ -193,7 +205,7 @@ mod tests {
 
     #[test]
     fn test_eval_expr() {
-        assert_eq!(71, "1 + 2 * 3 + 4 * 5 + 6".parse::<Expr>().unwrap().eval());
+        assert_eq!(231, "1 + 2 * 3 + 4 * 5 + 6".parse::<Expr>().unwrap().eval());
         assert_eq!(
             51,
             "1 + (2 * 3) + (4 * (5 + 6))"
@@ -201,23 +213,23 @@ mod tests {
                 .unwrap()
                 .eval()
         );
-        assert_eq!(26, "2 * 3 + (4 * 5)".parse::<Expr>().unwrap().eval());
+        assert_eq!(46, "2 * 3 + (4 * 5)".parse::<Expr>().unwrap().eval());
         assert_eq!(
-            437,
+            1445,
             "5 + (8 * 3 + 9 + 3 * 4 * 3)"
                 .parse::<Expr>()
                 .unwrap()
                 .eval()
         );
         assert_eq!(
-            12240,
+            669060,
             "5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4))"
                 .parse::<Expr>()
                 .unwrap()
                 .eval()
         );
         assert_eq!(
-            13632,
+            23340,
             "((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2"
                 .parse::<Expr>()
                 .unwrap()

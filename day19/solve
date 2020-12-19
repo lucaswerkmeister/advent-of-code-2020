@@ -1,0 +1,60 @@
+#!/usr/bin/gawk -f
+
+BEGIN {
+  FS = ":? ";
+}
+
+BEGINFILE {
+  phase = 0;
+  delete patterns;
+  delete rules;
+}
+
+phase == 0 && /./ {
+  rule = $1
+  if (NF == 2 && $2 ~ /^"."$/) {
+    character = substr($2, 2, 1);
+    sub(/[\\.^$(){}\[\]|*+?]/, "\\\\&", character);
+    patterns[rule] = character;
+  } else {
+    alternative = 1;
+    other_rule = 1;
+    for (i = 2; i <= NF; i++) {
+      if ($i == "|") {
+        alternative++;
+        other_rule = 1;
+      } else {
+        rules[rule][alternative][other_rule++] = $i;
+      }
+    }
+  }
+}
+
+function resolve_rule(rule,    pattern, alternative, other_rule) {
+  if (rule in patterns) {
+    return patterns[rule];
+  }
+  pattern = "(";
+  for (alternative in rules[rule]) {
+    if (alternative > 1) {
+      pattern = pattern "|";
+    }
+    for (other_rule in rules[rule][alternative]) {
+      pattern = pattern resolve_rule(rules[rule][alternative][other_rule]);
+    }
+  }
+  pattern = pattern ")";
+  print rule ": " pattern > "/dev/stderr";
+  return patterns[rule] = pattern;
+}
+
+/^$/ {
+  resolve_rule(0);
+  phase = 1;
+}
+
+phase == 1 && /./ {
+  if ($0 ~ ("^" patterns[0] "$")) {
+    print $0;
+  }
+}

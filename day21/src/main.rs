@@ -63,10 +63,7 @@ fn determine_allergens(
             let mut ingredient_lists = ingredient_lists.iter();
             ingredient_intersection.extend(ingredient_lists.next().unwrap().iter().cloned());
             for ingredient_list in ingredient_lists {
-                ingredient_intersection = ingredient_intersection
-                    .intersection(ingredient_list)
-                    .cloned()
-                    .collect();
+                ingredient_intersection.retain(|ingredient| ingredient_list.contains(&ingredient));
             }
             let mut ingredient_intersection = ingredient_intersection.into_iter();
             let ingredient = ingredient_intersection

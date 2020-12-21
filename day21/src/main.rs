@@ -59,9 +59,8 @@ fn determine_allergens(
     let mut last_resolved_ingredient = None;
     while !ingredient_lists_with_allergen.is_empty() {
         'outer: for (allergen, ingredient_lists) in &ingredient_lists_with_allergen {
-            let mut ingredient_intersection = HashSet::new();
             let mut ingredient_lists = ingredient_lists.iter();
-            ingredient_intersection.extend(ingredient_lists.next().unwrap().iter().cloned());
+            let mut ingredient_intersection = ingredient_lists.next().unwrap().clone();
             for ingredient_list in ingredient_lists {
                 ingredient_intersection.retain(|ingredient| ingredient_list.contains(&ingredient));
             }

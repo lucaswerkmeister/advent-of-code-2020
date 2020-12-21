@@ -69,12 +69,6 @@ fn determine_allergens(
                     ingredient_intersection.insert(ingredient.clone());
                 });
             for ingredient_list in ingredient_lists {
-                if ingredient_list.len() == 1 {
-                    let ingredient = ingredient_list.iter().next().unwrap();
-                    allergen_of_ingredient.insert(ingredient.clone(), allergen.clone());
-                    last_resolved_ingredient = Some(ingredient.clone());
-                    break 'outer;
-                }
                 ingredient_intersection = ingredient_intersection
                     .intersection(ingredient_list)
                     .cloned()

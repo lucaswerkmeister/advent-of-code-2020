@@ -2,14 +2,14 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct Ingredient(String);
 
 fn i(s: &str) -> Ingredient {
     Ingredient(s.to_owned())
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct Allergen(String);
 
 fn a(s: &str) -> Allergen {
@@ -116,11 +116,23 @@ fn part1(
         .count()
 }
 
+fn part2(allergens: HashMap<Ingredient, Allergen>) -> String {
+    let mut ingredients = allergens.keys().collect::<Vec<_>>();
+    ingredients
+        .sort_by(|&ingredient1, &ingredient2| allergens[ingredient1].cmp(&allergens[ingredient2]));
+    ingredients
+        .into_iter()
+        .map(|ingredient| ingredient.0.clone())
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let input = fs::read_to_string("input")?;
     let (ingredient_lists_with_allergen, ingredient_lists) = parse_input(&input);
     let allergens = determine_allergens(ingredient_lists_with_allergen);
-    println!("{}", part1(ingredient_lists, allergens));
+    println!("{}", part1(ingredient_lists, allergens.clone()));
+    println!("{}", part2(allergens));
     Ok(())
 }
 
@@ -214,5 +226,14 @@ sqjhc mxmxvkd sbzzf (contains fish)
         allergens.insert(i("sqjhc"), a("fish"));
         allergens.insert(i("fvjkl"), a("soy"));
         assert_eq!(5, part1(ingredient_lists, allergens));
+    }
+
+    #[test]
+    fn test_part2() {
+        let mut allergens: HashMap<Ingredient, Allergen> = HashMap::new();
+        allergens.insert(i("mxmxvkd"), a("dairy"));
+        allergens.insert(i("sqjhc"), a("fish"));
+        allergens.insert(i("fvjkl"), a("soy"));
+        assert_eq!("mxmxvkd,sqjhc,fvjkl", part2(allergens));
     }
 }

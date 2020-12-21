@@ -61,13 +61,7 @@ fn determine_allergens(
         'outer: for (allergen, ingredient_lists) in &ingredient_lists_with_allergen {
             let mut ingredient_intersection = HashSet::new();
             let mut ingredient_lists = ingredient_lists.iter();
-            ingredient_lists
-                .next()
-                .unwrap()
-                .iter()
-                .for_each(|ingredient| {
-                    ingredient_intersection.insert(ingredient.clone());
-                });
+            ingredient_intersection.extend(ingredient_lists.next().unwrap().iter().cloned());
             for ingredient_list in ingredient_lists {
                 ingredient_intersection = ingredient_intersection
                     .intersection(ingredient_list)

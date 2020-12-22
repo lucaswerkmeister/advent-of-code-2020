@@ -70,4 +70,90 @@ function part1 {
     winning_player_score
 }
 
+game_number=1
+
+# Play Recursive combat with the input_player_1_cards and input_player_2_cards,
+# assigning the result to the winning_player_cards. (No standard output, log goes to standard error.)
+# Returns true (0) if player 1 wins or false (1) if player 2 wins.
+function play_recursive_combat {
+    local player_1_cards=("${input_player_1_cards[@]}")
+    local player_2_cards=("${input_player_2_cards[@]}")
+    declare -A previous_rounds
+    local current_game_number=$((game_number++))
+    local round_number=1
+    local current_round_number
+
+    printf >&2 '=== Game %s ===\n\n' "$current_game_number"
+
+    while ((${#player_1_cards[@]} && ${#player_2_cards[@]})); do
+        current_round_number=$((round_number++))
+        printf >&2 -- '-- Round %s (Game %s) --\n' "$current_round_number" "$current_game_number"
+        printf >&2 'Player 1’s deck: %s' "${player_1_cards[0]}"; ((${#player_1_cards[@]} > 1)) && printf >&2 ', %s' "${player_1_cards[@]:1}"; printf >&2 '\n'
+        printf >&2 'Player 2’s deck: %s' "${player_2_cards[0]}"; ((${#player_2_cards[@]} > 1)) && printf >&2 ', %s' "${player_2_cards[@]:1}"; printf >&2 '\n'
+        round="${player_1_cards[*]}|${player_2_cards[*]}"
+        if [[ -v previous_rounds[$round] ]]; then
+            printf >&2 'Preventing infinite game...\n'
+            printf >&2 'The winner of game %s is player 1!\n\n' "$current_game_number"
+            winning_player_cards=("${player_1_cards[@]}")
+            return 0;
+        fi
+        previous_rounds[$round]=
+        local player_1_card=${player_1_cards[0]}
+        local player_2_card=${player_2_cards[0]}
+        player_1_cards=("${player_1_cards[@]:1}")
+        player_2_cards=("${player_2_cards[@]:1}")
+        printf >&2 'Player 1 plays: %s\n' "$player_1_card"
+        printf >&2 'Player 2 plays: %s\n' "$player_2_card"
+        if ((${#player_1_cards[@]} >= player_1_card && ${#player_2_cards[@]} >= player_2_card)); then
+            printf >&2 'Playing a sub-game to determine the winner...\n\n'
+            input_player_1_cards=("${player_1_cards[@]:0:$player_1_card}")
+            input_player_2_cards=("${player_2_cards[@]:0:$player_2_card}")
+            if play_recursive_combat; then
+                printf >&2 '...anyway, back to game %d.\n' "$current_game_number"
+                printf >&2 'Player 1 wins round %s of game %s!\n\n' "$current_round_number" "$current_game_number"
+                player_1_cards+=("$player_1_card" "$player_2_card")
+            else
+                printf >&2 '...anyway, back to game %d.\n' "$current_game_number"
+                printf >&2 'Player 2 wins round %s of game %s!\n\n' "$current_round_number" "$current_game_number"
+                player_2_cards+=("$player_2_card" "$player_1_card")
+            fi
+        elif ((player_1_card > player_2_card)); then
+            printf >&2 'Player 1 wins round %s of game %s!\n\n' "$current_round_number" "$current_game_number"
+            player_1_cards+=("$player_1_card" "$player_2_card")
+        else
+            printf >&2 'Player 2 wins round %s of game %s!\n\n' "$current_round_number" "$current_game_number"
+            player_2_cards+=("$player_2_card" "$player_1_card")
+        fi
+    done
+    if ((${#player_1_cards[@]})); then
+        printf >&2 'The winner of game %s is player 1!\n\n' "$current_game_number"
+        winning_player_cards=("${player_1_cards[@]}")
+        return 0;
+    else
+        printf >&2 'The winner of game %s is player 2!\n\n' "$current_game_number"
+        winning_player_cards=("${player_2_cards[@]}")
+        return 1;
+    fi
+}
+
+function part2 {
+    input_player_1_cards=("${original_player_1_cards[@]}")
+    input_player_2_cards=("${original_player_2_cards[@]}")
+    play_recursive_combat; local winner=$(($? + 1))
+    printf >&2 '\n== Post-game results ==\n'
+    case $winner in
+        1)
+            printf >&2 'Player 1’s deck: %s' "${winning_player_cards[0]}"; ((${#winning_player_cards[@]} > 1)) && printf >&2 ', %s' "${winning_player_cards[@]:1}"; printf >&2 '\n'
+            printf >&2 'Player 2’s deck: \n'
+            ;;
+        2)
+            printf >&2 'Player 1’s deck: \n'
+            printf >&2 'Player 2’s deck: %s' "${winning_player_cards[0]}"; ((${#winning_player_cards[@]} > 1)) && printf >&2 ', %s' "${winning_player_cards[@]:1}"; printf >&2 '\n'
+            ;;
+        *) die 'unexpected winner: %s' "$winner";;
+    esac
+    winning_player_score
+}
+
 part1
+part2

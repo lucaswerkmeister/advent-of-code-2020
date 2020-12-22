@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+function die {
+    printf >&2 "%s: $1\n" "$0" "${@:2}"
+    exit 1
+}
+
+{
+    if ! IFS= read -r player_1_header; then
+        die 'no header line for player 1'
+    fi
+    if [[ $player_1_header != 'Player 1:' ]]; then
+        die 'unexpected header line for player 1: %s' "$player_1_header"
+    fi
+    while IFS= read -r player_1_card && [[ $player_1_card ]]; do
+        player_1_cards+=("$player_1_card")
+    done
+    if ! IFS= read -r player_2_header; then
+        die 'no header line for player 2'
+    fi
+    if [[ $player_2_header != 'Player 2:' ]]; then
+        die 'unexpected header line for player 2: %s' "$player_2_header"
+    fi
+    while IFS= read -r player_2_card; do
+        player_2_cards+=("$player_2_card")
+    done
+} < "${1:?input file not specified}"
+
+original_player_1_cards=("${player_1_cards[@]}")
+original_player_2_cards=("${player_2_cards[@]}")
+
+function part1 {
+    local player_1_cards=("${original_player_1_cards[@]}")
+    local player_2_cards=("${original_player_2_cards[@]}")
+
+    while ((${#player_1_cards[@]} && ${#player_2_cards[@]})); do
+        player_1_card=${player_1_cards[0]}
+        player_2_card=${player_2_cards[0]}
+        player_1_cards=("${player_1_cards[@]:1}")
+        player_2_cards=("${player_2_cards[@]:1}")
+        if ((player_1_card > player_2_card)); then
+            player_1_cards+=("$player_1_card" "$player_2_card")
+        else
+            player_2_cards+=("$player_2_card" "$player_1_card")
+        fi
+    done
+    if ((${#player_1_cards[@]})); then
+        winning_player_cards=("${player_1_cards[@]}")
+    else
+        winning_player_cards=("${player_2_cards[@]}")
+    fi
+    total_cards=${#winning_player_cards[@]}
+    winning_player_score=0
+    for ((i = 0; i < total_cards; i++)); do
+        ((winning_player_score += winning_player_cards[i] * (total_cards - i)))
+    done
+    printf '%s\n' "$winning_player_score"
+}
+
+part1

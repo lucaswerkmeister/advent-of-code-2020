@@ -28,7 +28,10 @@ function die {
 original_player_1_cards=("${player_1_cards[@]}")
 original_player_2_cards=("${player_2_cards[@]}")
 
-function part1 {
+# Play non-recursive Combat with the original_player_1_cards and original_player_2_cards,
+# assigning the result to the winning_player_cards. (No output.)
+# Returns true (0) if player 1 wins or false (1) if player 2 wins.
+function play_nonrecursive_combat {
     local player_1_cards=("${original_player_1_cards[@]}")
     local player_2_cards=("${original_player_2_cards[@]}")
 
@@ -45,15 +48,26 @@ function part1 {
     done
     if ((${#player_1_cards[@]})); then
         winning_player_cards=("${player_1_cards[@]}")
+        return 0;
     else
         winning_player_cards=("${player_2_cards[@]}")
+        return 1;
     fi
+}
+
+# Calculate and print the score of the winning_player_cards.
+function winning_player_score {
     total_cards=${#winning_player_cards[@]}
     winning_player_score=0
     for ((i = 0; i < total_cards; i++)); do
         ((winning_player_score += winning_player_cards[i] * (total_cards - i)))
     done
     printf '%s\n' "$winning_player_score"
+}
+
+function part1 {
+    play_nonrecursive_combat
+    winning_player_score
 }
 
 part1

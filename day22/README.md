@@ -14,6 +14,9 @@ but I think that’s acceptable and just due to Bash being slow in general.
 
 To debug part 2, I made the script print a log that’s almost identical to the one in the puzzle description
 (there’s a handful of extra blank lines, and I use ’ U+2019 instead of ' U+0027 to sidestep quoting issues).
+Removing that logging (most of the `printf >&2` statements, and also the statements to track the current game/round number)
+speeds the script up so that it only takes about a minute and a half to complete for my input.
+(I don’t feel inclined to commit this version, though.)
 
 Not much else to say about this solution, I think.
 

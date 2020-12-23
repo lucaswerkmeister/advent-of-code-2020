@@ -26,15 +26,9 @@ struct State {
 
 impl State {
     fn new(c1: u8, c2: u8, c3: u8, c4: u8, c5: u8, c6: u8, c7: u8, c8: u8, c9: u8) -> Self {
-        let state = Self {
+        Self {
             cups: vec![c1, c2, c3, c4, c5, c6, c7, c8, c9],
-        };
-        assert!(state.valid());
-        state
-    }
-
-    fn valid(&self) -> bool {
-        self.cups.len() == 9 && (1..=9).all(|cup| self.cups.contains(&cup))
+        }
     }
 
     fn do_move(&mut self) {
@@ -60,8 +54,6 @@ impl State {
         );
         // push current cup to end
         self.cups.push(current_cup);
-        // check that nothing went wrong (only in debug mode)
-        debug_assert!(self.valid());
     }
 
     fn rotate_to_1(&mut self) {
@@ -79,8 +71,6 @@ impl State {
             self.cups
                 .splice(append_index..append_index, cups_before_1.into_iter());
         }
-        // check that nothing went wrong (only in debug mode)
-        debug_assert!(self.valid());
     }
 }
 
@@ -108,12 +98,10 @@ impl FromStr for State {
                     .ok_or_else(|| ParseStateError::BadCup(cup))
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let state = Self { cups };
-        if state.valid() {
-            Ok(state)
-        } else {
-            Err(ParseStateError::DuplicateCup) // only error possible at this point
+        if !(1..=9).all(|cup| cups.contains(&cup)) {
+            return Err(ParseStateError::DuplicateCup);
         }
+        Ok(Self { cups })
     }
 }
 

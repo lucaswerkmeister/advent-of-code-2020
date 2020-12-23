@@ -41,6 +41,10 @@ impl State {
         }
     }
 
+    fn extend_to_one_million(&mut self) {
+        self.cups.extend((self.cups.len() as u32 + 1)..=1_000_000);
+    }
+
     fn do_move(&mut self) {
         // pop current cup from front
         let current_cup = self.cups.remove(0);
@@ -121,9 +125,25 @@ fn part1(mut state: State) -> String {
     state.to_string().chars().skip(1).collect()
 }
 
+fn part2(mut state: State) -> u64 {
+    state.extend_to_one_million();
+    for _ in 0..10_000_000 {
+        state.do_move();
+    }
+    let cup_1_position = state
+        .cups
+        .iter()
+        .position(|&cup| cup == 1)
+        .expect("cup 1 must exist");
+    let star_1_position = (cup_1_position + 1) % state.cups.len();
+    let star_2_position = (cup_1_position + 2) % state.cups.len();
+    state.cups[star_1_position] as u64 * state.cups[star_2_position] as u64
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let input: State = fs::read_to_string("input")?.trim().parse()?;
     println!("{}", part1(input.clone()));
+    println!("{}", part2(input));
     Ok(())
 }
 
@@ -199,7 +219,22 @@ mod tests {
     }
 
     #[test]
+    fn test_extend_to_one_million() {
+        let mut state = State::new(3, 8, 9, 1, 2, 5, 4, 6, 7);
+        state.extend_to_one_million();
+        assert_eq!(1_000_000, state.cups.len());
+        assert_eq!(10, state.cups[9]);
+        assert_eq!(1_000, state.cups[999]);
+        assert_eq!(1_000_000, state.cups[999_999]);
+    }
+
+    #[test]
     fn test_part1() {
         assert_eq!("67384529", part1("389125467".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(149245887792, part2("389125467".parse().unwrap()));
     }
 }

@@ -21,11 +21,21 @@ impl Error for ParseStateError {}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct State {
-    cups: Vec<u8>,
+    cups: Vec<u32>,
 }
 
 impl State {
-    fn new(c1: u8, c2: u8, c3: u8, c4: u8, c5: u8, c6: u8, c7: u8, c8: u8, c9: u8) -> Self {
+    fn new(
+        c1: u32,
+        c2: u32,
+        c3: u32,
+        c4: u32,
+        c5: u32,
+        c6: u32,
+        c7: u32,
+        c8: u32,
+        c9: u32,
+    ) -> Self {
         Self {
             cups: vec![c1, c2, c3, c4, c5, c6, c7, c8, c9],
         }
@@ -42,7 +52,9 @@ impl State {
         while destination_cup_position.is_none() {
             destination_cup -= 1;
             if destination_cup == 0 {
-                destination_cup = 9;
+                destination_cup = (self.cups.len()
+                    + 1 // current_cup
+                    + 3) as u32; // picked_cups
             }
             destination_cup_position = self.cups.iter().position(|&cup| cup == destination_cup);
         }
@@ -92,11 +104,7 @@ impl FromStr for State {
         }
         let cups = s
             .chars()
-            .map(|cup| {
-                cup.to_digit(10)
-                    .map(|c| c as u8)
-                    .ok_or_else(|| ParseStateError::BadCup(cup))
-            })
+            .map(|cup| cup.to_digit(10).ok_or_else(|| ParseStateError::BadCup(cup)))
             .collect::<Result<Vec<_>, _>>()?;
         if !(1..=9).all(|cup| cups.contains(&cup)) {
             return Err(ParseStateError::DuplicateCup);

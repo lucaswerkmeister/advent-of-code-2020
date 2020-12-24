@@ -1,10 +1,7 @@
-#![feature(linked_list_cursors)]
-#![feature(option_result_contains)]
-use std::collections::LinkedList;
 use std::error::Error;
 use std::fmt;
 use std::fs;
-use std::mem;
+use std::iter;
 use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -24,7 +21,7 @@ impl Error for ParseStateError {}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct State {
-    cups: LinkedList<u32>,
+    cups: Vec<u32>,
 }
 
 impl State {
@@ -40,7 +37,7 @@ impl State {
         c9: u32,
     ) -> Self {
         Self {
-            cups: vec![c1, c2, c3, c4, c5, c6, c7, c8, c9].into_iter().collect(),
+            cups: vec![c1, c2, c3, c4, c5, c6, c7, c8, c9],
         }
     }
 
@@ -50,42 +47,46 @@ impl State {
 
     fn do_move(&mut self) {
         // pop current cup from front
-        let current_cup = self.cups.pop_front().unwrap();
+        let current_cup = self.cups.remove(0);
         // pick three cups after current cup
-        let remaining_cups = self.cups.split_off(3);
-        let picked_cups = mem::replace(&mut self.cups, remaining_cups);
+        let picked_cups = self.cups.splice(0..3, iter::empty()).collect::<Vec<_>>();
         // find destination cup
-        let mut destination_cup = current_cup - 1;
-        if destination_cup == 0 {
-            destination_cup = (self.cups.len()
-                + 1 // current_cup
-                + 3) as u32; // picked_cups
-        }
-        while picked_cups.contains(&destination_cup) {
+        let mut destination_cup = current_cup;
+        let mut destination_cup_position = None;
+        while destination_cup_position.is_none() {
             destination_cup -= 1;
             if destination_cup == 0 {
                 destination_cup = (self.cups.len()
                     + 1 // current_cup
                     + 3) as u32; // picked_cups
             }
-        }
-        let mut cursor = self.cups.cursor_front_mut();
-        while !cursor.current().contains(&&destination_cup) {
-            cursor.move_next();
+            destination_cup_position = self.cups.iter().position(|&cup| cup == destination_cup);
         }
         // insert picked cups after destination cup
-        cursor.splice_after(picked_cups);
+        let picked_cups_position = destination_cup_position.unwrap() + 1;
+        self.cups.splice(
+            picked_cups_position..picked_cups_position,
+            picked_cups.into_iter(),
+        );
         // push current cup to end
-        self.cups.push_back(current_cup);
+        self.cups.push(current_cup);
     }
 
     fn rotate_to_1(&mut self) {
-        let mut cursor = self.cups.cursor_front_mut();
-        while !cursor.current().contains(&&1) {
-            cursor.move_next();
+        let cup_1_position = self
+            .cups
+            .iter()
+            .position(|&cup| cup == 1)
+            .expect("cup 1 must exist");
+        if cup_1_position != 0 {
+            let cups_before_1 = self
+                .cups
+                .splice(0..cup_1_position, iter::empty())
+                .collect::<Vec<_>>();
+            let append_index = self.cups.len();
+            self.cups
+                .splice(append_index..append_index, cups_before_1.into_iter());
         }
-        let mut cups_before_1 = cursor.split_before();
-        self.cups.append(&mut cups_before_1);
     }
 }
 
@@ -108,7 +109,7 @@ impl FromStr for State {
         let cups = s
             .chars()
             .map(|cup| cup.to_digit(10).ok_or_else(|| ParseStateError::BadCup(cup)))
-            .collect::<Result<LinkedList<_>, _>>()?;
+            .collect::<Result<Vec<_>, _>>()?;
         if !(1..=9).all(|cup| cups.contains(&cup)) {
             return Err(ParseStateError::DuplicateCup);
         }
@@ -129,21 +130,14 @@ fn part2(mut state: State) -> u64 {
     for _ in 0..10_000_000 {
         state.do_move();
     }
-    let mut cursor = state.cups.cursor_front();
-    while !cursor.current().contains(&&1) {
-        cursor.move_next();
-    }
-    cursor.move_next();
-    while cursor.current().is_none() {
-        cursor.move_next();
-    }
-    let cup_1 = *cursor.current().unwrap();
-    cursor.move_next();
-    while cursor.current().is_none() {
-        cursor.move_next();
-    }
-    let cup_2 = *cursor.current().unwrap();
-    cup_1 as u64 * cup_2 as u64
+    let cup_1_position = state
+        .cups
+        .iter()
+        .position(|&cup| cup == 1)
+        .expect("cup 1 must exist");
+    let star_1_position = (cup_1_position + 1) % state.cups.len();
+    let star_2_position = (cup_1_position + 2) % state.cups.len();
+    state.cups[star_1_position] as u64 * state.cups[star_2_position] as u64
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -229,12 +223,9 @@ mod tests {
         let mut state = State::new(3, 8, 9, 1, 2, 5, 4, 6, 7);
         state.extend_to_one_million();
         assert_eq!(1_000_000, state.cups.len());
-        let iter = state.cups.iter();
-        let mut iter = iter.skip(9);
-        assert_eq!(Some(&10), iter.next());
-        let mut iter = iter.skip(989);
-        assert_eq!(Some(&1_000), iter.next());
-        assert_eq!(Some(&1_000_000), state.cups.back());
+        assert_eq!(10, state.cups[9]);
+        assert_eq!(1_000, state.cups[999]);
+        assert_eq!(1_000_000, state.cups[999_999]);
     }
 
     #[test]

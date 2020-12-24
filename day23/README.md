@@ -14,9 +14,13 @@ and arranged such that the current cup is always at the front of the `Vec`
 (rather than having a separate index for the current cup).
 This worked well enough for ten cups, but for part 2, it was rather inefficient;
 it eventually completed, but only an hour and forty minutes.
-I only realized afterwards that linked lists would probably be a much better data structure for this,
-but I haven’t implemented a linked list solution yet,
-and I’m not sure if I’ll have the time for it.
+Afterwards, I thought that linked lists might be a better data structure for this,
+since shuffling elements around is much cheaper there;
+however, when I implemented a linked list version
+(which required at least one Nightly-only Rust feature, [linked_list_cursors][]),
+it turned out to be not significantly faster
+(I didn’t let it finish, so I don’t know if it’s roughly equally as fast or even slower).
+You can see that version in [commit 4329d9a10a][], if you want.
 
 ## Usage
 
@@ -28,3 +32,5 @@ This runs `cargo run --release`, which prints the part 1 and 2 solutions to stan
 (The `input` filename is hard-coded.)
 
 [day23]: https://adventofcode.com/2020/day/23
+[linked_list_cursors]: https://github.com/rust-lang/rust/issues/58533
+[commit 4329d9a10a]: https://github.com/lucaswerkmeister/advent-of-code-2020/commit/4329d9a10adbf36f78ec73ee82d4f8eade282bf6

@@ -1,2 +1,2 @@
 #!/bin/sh
-exec cargo run --quiet --release
+exec cargo +nightly run --quiet --release

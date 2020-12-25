@@ -20,11 +20,17 @@ impl Floor {
                     'w' => x -= 1,
                     'n' => match chars.next().expect("must have character after 'n'") {
                         'e' => y += 1,
-                        'w' => { y += 1; x -= 1; },
+                        'w' => {
+                            y += 1;
+                            x -= 1;
+                        }
                         c2 => panic!("unexpected character {} after 'n'", c2),
                     },
                     's' => match chars.next().expect("must have character after 'n'") {
-                        'e' => { y -= 1; x += 1; },
+                        'e' => {
+                            y -= 1;
+                            x += 1;
+                        }
                         'w' => y -= 1,
                         c2 => panic!("unexpected character {} after 'n'", c2),
                     },
@@ -34,10 +40,11 @@ impl Floor {
             *tiles.entry((x, y)).or_default() ^= true;
         }
         Self {
-            tiles: tiles.into_iter()
+            tiles: tiles
+                .into_iter()
                 .filter(|&(_key, value)| value)
                 .map(|(key, _value)| key)
-                .collect()
+                .collect(),
         }
     }
 
@@ -60,7 +67,9 @@ impl Floor {
     }
 
     fn next_day(&self) -> Self {
-        let potential_tiles: HashSet<(i64, i64)> = self.tiles.iter()
+        let potential_tiles: HashSet<(i64, i64)> = self
+            .tiles
+            .iter()
             .flat_map(|&(x, y)| self.neighbor_coordinates(x, y).into_iter())
             .collect();
         let mut tiles = HashSet::with_capacity(self.tiles.len());

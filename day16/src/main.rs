@@ -155,7 +155,8 @@ impl Input {
         Self {
             fields: self.fields.clone(),
             your_ticket: self.your_ticket.clone(),
-            nearby_tickets: self.nearby_tickets
+            nearby_tickets: self
+                .nearby_tickets
                 .iter()
                 .filter(|&ticket| ticket.invalid_values(&self.fields).is_empty())
                 .cloned()
@@ -193,7 +194,11 @@ impl Input {
             .enumerate()
             .map(|(i, possible_field)| {
                 if possible_field.len() != 1 {
-                    panic!("Field {} not unambiguous ({} options)", i, possible_field.len());
+                    panic!(
+                        "Field {} not unambiguous ({} options)",
+                        i,
+                        possible_field.len()
+                    );
                 }
                 &possible_field[0]
             })
@@ -219,8 +224,8 @@ impl FromStr for Input {
         }
         let your_ticket = lines
             .next()
-            .ok_or(ParseInputError::NoYourTicket)
-            ?.parse()
+            .ok_or(ParseInputError::NoYourTicket)?
+            .parse()
             .map_err(|e| ParseInputError::ParseYourTicketError(e))?;
         let nearby_tickets_blank_line = lines.next();
         if nearby_tickets_blank_line != Some("") {
@@ -302,9 +307,27 @@ mod tests {
             "row: 6-11 or 33-44".parse().unwrap(),
             "seat: 13-40 or 45-50".parse().unwrap(),
         ];
-        assert_eq!(vec![4], Ticket { values: vec![40, 4, 50] }.invalid_values(&fields));
-        assert_eq!(vec![55], Ticket { values: vec![55, 2, 20] }.invalid_values(&fields));
-        assert_eq!(vec![12], Ticket { values: vec![38, 6, 12] }.invalid_values(&fields));
+        assert_eq!(
+            vec![4],
+            Ticket {
+                values: vec![40, 4, 50]
+            }
+            .invalid_values(&fields)
+        );
+        assert_eq!(
+            vec![55],
+            Ticket {
+                values: vec![55, 2, 20]
+            }
+            .invalid_values(&fields)
+        );
+        assert_eq!(
+            vec![12],
+            Ticket {
+                values: vec![38, 6, 12]
+            }
+            .invalid_values(&fields)
+        );
     }
 
     #[test]
@@ -357,7 +380,8 @@ nearby tickets:
 55,2,20
 38,6,12
 "
-                .parse().unwrap();
+        .parse()
+        .unwrap();
         assert_eq!(71, sample_input.part1());
     }
 
@@ -377,7 +401,8 @@ nearby tickets:
 55,2,20
 38,6,12
 "
-                .parse().unwrap();
+        .parse()
+        .unwrap();
         assert_eq!(
             Input {
                 fields: vec![
@@ -397,10 +422,12 @@ nearby tickets:
                         name: "seat".to_owned(),
                     },
                 ],
-                your_ticket: Ticket { values: vec![7, 1, 14] },
-                nearby_tickets: vec![
-                    Ticket { values: vec![7, 3, 47] },
-                ],
+                your_ticket: Ticket {
+                    values: vec![7, 1, 14]
+                },
+                nearby_tickets: vec![Ticket {
+                    values: vec![7, 3, 47]
+                },],
             },
             sample_input.validate()
         );
@@ -427,12 +454,22 @@ nearby tickets:
                         name: "seat".to_owned(),
                     },
                 ],
-                your_ticket: Ticket { values: vec![7, 1, 14] },
+                your_ticket: Ticket {
+                    values: vec![7, 1, 14]
+                },
                 nearby_tickets: vec![
-                    Ticket { values: vec![7, 3, 47] },
-                    Ticket { values: vec![40, 4, 50] },
-                    Ticket { values: vec![55, 2, 20] },
-                    Ticket { values: vec![38, 6, 12] },
+                    Ticket {
+                        values: vec![7, 3, 47]
+                    },
+                    Ticket {
+                        values: vec![40, 4, 50]
+                    },
+                    Ticket {
+                        values: vec![55, 2, 20]
+                    },
+                    Ticket {
+                        values: vec![38, 6, 12]
+                    },
                 ],
             }),
             "\
@@ -449,7 +486,7 @@ nearby tickets:
 55,2,20
 38,6,12
 "
-                .parse()
+            .parse()
         );
     }
 }

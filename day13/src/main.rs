@@ -34,5 +34,8 @@ fn part2(filename: &str) -> u64 {
 }
 
 fn main() {
-    println!("{}", part2(&env::args().skip(1).next().expect("one argument")));
+    println!(
+        "{}",
+        part2(&env::args().skip(1).next().expect("one argument"))
+    );
 }

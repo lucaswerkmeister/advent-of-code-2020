@@ -8,7 +8,7 @@ but I remembered that the specific problem being described was called the [discr
 and fortunately the German Wikipedia article for that listed Diffie-Hellman as one area where it’s used.
 (The English Wikipedia article only mentions “several important algorithms in public-key cryptography”.)
 
-I implemented a simple `mod_pow` function and a struct representing a partial Diffie-Helllman “system”,
+I implemented a simple `mod_pow` function and a struct representing a partial Diffie-Hellman “system”,
 where the private keys and shared key may or may not be known (`Option` type),
 along with several constructors depending on what information you have available.
 I then added a function that cracks the shared key by trying all possible private keys in ascending order.
